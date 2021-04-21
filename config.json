@@ -1,0 +1,88 @@
+{
+  "name": "Project Prolapse Migrator",
+  "namespace": "Stanford\\ProjProlapseMigrator",
+  "description": "This EM migrates data from old PANS to new PANS",
+  "authors": [
+    {
+      "name": "Jae Lee",
+      "email": "jael@stanford.edu",
+      "institution": "Stanford University"
+    }
+  ],
+  "permissions": [
+  ],
+  "links": {
+    "project": [
+      {
+        "name": "Migrator",
+        "icon": "page_white_stack",
+        "url": "view/index.php",
+        "show-header-and-footer": true
+      },
+      {
+        "name": "Test",
+        "icon": "page_white_stack",
+        "url": "classes/ConsentHandler.php",
+        "show-header-and-footer": true
+      }
+    ]
+  },
+  "system-settings": [
+    {
+      "key": "enable-system-debug-logging",
+      "name": "<b>Enable Debug Logging (system-wide)</b>",
+      "required": false,
+      "type": "checkbox"
+    }
+  ],
+  "project-settings": [
+    {
+      "key": "enable-project-debug-logging",
+      "name": "<b>Enable Debug Logging</b></h6><i> (Requires emLogger)</i><br>If you have questions enabling debugging, please contact the REDCap team for help.",
+      "required": false,
+      "type": "checkbox"
+    },
+    {
+      "key": "main-config-event-id",
+      "name": "<div class='alert alert-success'><b>Main Config Event Name</b></div>",
+      "required": false,
+      "type": "event-list"
+    },
+    {
+      "key": "visit-event-id",
+      "name": "<div class='alert alert-success'><b>Visit Event Name</b></div>",
+      "required": false,
+      "type": "event-list"
+    },
+    {
+      "key": "fup-event-id",
+      "name": "<div class='alert alert-success'><b>FUP Event Name</b></div>",
+      "required": false,
+      "type": "event-list"
+    },
+    {
+      "key": "op-event-id",
+      "name": "<div class='alert alert-success'><b>Operations Event Name</b></div>",
+      "required": false,
+      "type": "event-list"
+    },
+    {
+      "key": "target-mrn-field",
+      "name": "<div class='alert alert-success'><b>Target MRN Field</b></div>",
+      "required": false,
+      "type": "field-list"
+    },
+    {
+      "key": "origin-main-id",
+      "name": "<div class='alert alert-success'><b>Origin Main Id Field</b></div>",
+      "required": false,
+      "type": "text"
+    },
+    {
+      "key": "origin-main-event",
+      "name": "<div class='alert alert-success'><b>Origin Main Event</b></div>",
+      "required": false,
+      "type": "text"
+    }
+  ]
+}

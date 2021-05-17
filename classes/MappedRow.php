@@ -20,7 +20,9 @@ class MappedRow {
     private $legacy_main_id_field;  //keep copy of original ID
     private $legacy_visit_id_field;  //keep copy of original visit ID for visit event
 
-    private $main_data;
+    private $main_data; //main event (left blank in map file
+    private $event_data; //to_event field specified in map file
+
     private $visit_data;
     private $repeat_form_data;
     private $error_msg;
@@ -193,6 +195,7 @@ and rd.value = '%s'",
 
         //make the save data array
         $main_data = array();
+        $event_data = array();
         $visit_data = array();
         $repeat_form_data = array();
         $error_msg = array();
@@ -291,9 +294,27 @@ and rd.value = '%s'",
 
             //$module->emDebug("=========> TARGET",$key,  $target_field_array);
 
-            //HANDLE the REPEATING FORMS
-            //if 'to_repeat_event' is populated, it will
-            if (!empty($mapper[$key]['to_repeat_event'])) {
+            //HANDLE the EVENT FORMS
+            //if 'to_event' is populated, it will add to the event_data array
+            if (!empty($mapper[$key]['to_event'])) {
+                $to_event    =  $mapper[$key]['to_event'];
+
+                // save to the specified to_event
+
+                //wrapped everything in array to handle multiple field (like first and last name)
+                foreach ($target_field_array as $t_field => $t_val) {
+                    //REDCap saveData array format expectes event_id
+                    $event_id = REDCap::getEventIdFromUniqueEvent($to_event);
+
+                    $event_data[$event_id][$t_field] = $t_val;
+                }
+
+                //check if there are any customizations to the repeating event
+
+
+            //HANDLE the REPEAT EVENT FORMS
+            //if 'to_repeat_event' is populated, it will add to the visit_data array
+            } else if (!empty($mapper[$key]['to_repeat_event'])) {
                 $rpt_event    =  $mapper[$key]['to_repeat_event'];
                 $rpt_instance =  $mapper[$key]['to_repeat_instance'];
                 //$module->emDebug("REPEAT EVENT: Setting $key into event: " . $rpt_event . " Instance: " . $rpt_instance);
@@ -353,14 +374,18 @@ and rd.value = '%s'",
 
         }
 
-        //$module->emDebug($main_data, $visit_data);
-
-
         //check that there is data in main_data
         if (sizeof($main_data)<1) {
             $this->main_data = null;
         } else {
             $this->main_data = $main_data;
+        }
+
+        //set up the event data
+        if (sizeof($event_data)<1) {
+            $this->event_data = null;
+        } else {
+            $this->event_data = $event_data;
         }
 
         //set up the visit data
@@ -414,11 +439,12 @@ and rd.value = '%s'",
     public function getVisitID() {
         return $this->visit_id;
     }
-    public function getIBHID() {
-        return $this->ibh_id;
-    }
+
     public function getMainData() {
         return $this->main_data;
+    }
+    public function getEventData() {
+        return $this->event_data;
     }
     public function getVisitData() {
         return $this->visit_data;
@@ -443,9 +469,6 @@ and rd.value = '%s'",
 
     public function setMainData($main_data) {
         $this->main_data = $main_data;
-    }
-    public function setVisitData($visit_data) {
-         $this->visit_data = $visit_data;
     }
     public function setRepeatFormData($repeat_form_data) {
          $this->repeat_form_data = $repeat_form_data;

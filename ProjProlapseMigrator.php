@@ -100,6 +100,7 @@ class ProjProlapseMigrator extends \ExternalModules\AbstractExternalModule
 
 
     /**
+     * Data
      *
      * @param $file
      * @param $origin_pid
@@ -154,11 +155,11 @@ class ProjProlapseMigrator extends \ExternalModules\AbstractExternalModule
                     continue;
                 }
 
-                $this->emDebug(" Analyzing row $ctr: RECORD: $record EVENT: $event ROW $row");
+                $this->emDebug(" Analyzing row $ctr: RECORD: $record EVENT: $event");
 
                 //check that the ID doesn't already exist
 
-                $origin_id_field = $this->getProjectSetting('origin-main-id'); //'clinical_barcode';
+                $origin_id_field = $this->getProjectSetting('origin-main-id');
                 $mrn_field       = $this->getProjectSetting('target-mrn-field');
 
                 try {
@@ -198,7 +199,7 @@ class ProjProlapseMigrator extends \ExternalModules\AbstractExternalModule
 
                 //Set the participant ID
                 if (empty($found)) {
-                    $this->emDEbug("Row $ctr: EMPTY: $record NOT FOUND");
+                    $this->emDEbug("Row $ctr: EMPTY: $record NOT FOUND so proceed with migration");
                     //not found so create a new record ID
 
                     //reuse the same id
@@ -213,9 +214,8 @@ class ProjProlapseMigrator extends \ExternalModules\AbstractExternalModule
                     //$return = REDCap::saveData('json', json_encode(array($main_data)));
                     //RepeatingForms uses array. i think expected format is [id][event] = $data
                     $temp_instance = array();  //reset to empty
-                    $temp_instance[$record_id][$this->getProjectSetting('main-config-event-id')] = $mrow->getMainData();
+                    $temp_instance[$record_id][$this->getProjectSetting('main-config-event-id')] = $main_data;
 
-                    //$this->emDebug($temp_instance);
                     $return = REDCap::saveData('array', $temp_instance);
 
                     if (isset($return["errors"]) and !empty($return["errors"])) {
@@ -226,12 +226,32 @@ class ProjProlapseMigrator extends \ExternalModules\AbstractExternalModule
                         $this->emLog("Row $ctr: Successfully saved main event data for record " . $mrow->getOriginalID() . " with new id $record_id");
                     }
                 }
-                //}
+
+                //HANDLE EVENT DATA
+                $event_data = $mrow->getEventData();
+                if (null !== $event_data) {
+                    $save_event_data = array(); //reset to empty
+                    $save_event_data[$record_id] = $event_data;
+
+                    $this->emDebug("Row $ctr EVENT: Starting Event migration w count of " . sizeof($event_data)); //, $mrow->getVisitData());
+
+                    $event_save_status = REDCap::saveData('array',$save_event_data);
+                    if (isset($event_save_status["errors"]) and !empty($event_save_status["errors"])) {
+                        $msg = "Row $ctr: Not able to save event data for record $record_id  with original id: " . $mrow->getOriginalID() . implode(" / ", $event_save_status['errors']);
+                        $this->emError($msg, $event_save_status['errors'], $save_event_data);
+                        $this->logProblemRow($ctr, $row, $msg, $not_entered);
+                        break;
+                    } else {
+                        $this->emLog("Row $ctr: Successfully saved main event data for record " . $mrow->getOriginalID() . " with new id $record_id");
+                    }
+
+                }
+
 
                 //if there is visit data
                 $repeat_data = $mrow->getVisitData();
                 if (null !== $repeat_data) {
-                            $this->emDebug("Row $ctr: Starting Visit Event migration w count of " . sizeof($mrow->getVisitData())); //, $mrow->getVisitData());
+                    $this->emDebug("Row $ctr: Starting Repeating Event migration w count of " . sizeof($mrow->getVisitData())); //, $mrow->getVisitData());
 
                     foreach ($repeat_data as $v_event => $v_instances  ) {
                         foreach ($v_instances as $v_instance => $v_data ) {
@@ -265,7 +285,7 @@ class ProjProlapseMigrator extends \ExternalModules\AbstractExternalModule
 
                     }
                 } else {
-                            $msg = "Row $ctr: Visit Event had no data to enter for " . $mrow->getOriginalID();
+                            $msg = "Row $ctr: REPEAT Event had no data to enter for " . $mrow->getOriginalID();
                             $this->emError($msg);
                             $this->logProblemRow($ctr, $row, $msg, $not_entered);
                 }

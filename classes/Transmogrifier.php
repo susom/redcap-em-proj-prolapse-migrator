@@ -232,6 +232,15 @@ class Transmogrifier {
     }
 
 
+    /**
+     *
+     *
+     * @param $from_field
+     * @param $incoming_value
+     * @param $target_field
+     * @param $map
+     * @return array
+     */
     public function radioToCheckbox($from_field, $incoming_value, $target_field, $map) {
         global $module;
         $return_array = null;

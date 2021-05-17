@@ -19,10 +19,10 @@
         "url": "view/index.php",
         "show-header-and-footer": true
       },
-      {
+       {
         "name": "Test",
         "icon": "page_white_stack",
-        "url": "classes/ConsentHandler.php",
+        "url": "view/test.php",
         "show-header-and-footer": true
       }
     ]

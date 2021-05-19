@@ -13,7 +13,7 @@ class Mapper
 
     private $data_dict;
     private $to_data_dict;
-    private $mapper;
+    private $map;
     private $repeating_forms;
     private $header;
 
@@ -54,7 +54,7 @@ class Mapper
 
         //$module->emDebug($this->data_dict);
 
-        $this->mapper = $this->createMapper($file);
+        $this->map = $this->createMap($file);
 
         $this->repeating_forms = $this->getUniqueRepeatingForms();
 
@@ -72,12 +72,12 @@ class Mapper
         }
     }
     /**0
-     * Look throough the to_form_instance column of the map and make a list of all the repeating forms (unique
+     * Look through the to_form_instance column of the map and make a list of all the repeating forms (unique
      * with instance number removed)
      */
     function getUniqueRepeatingForms() {
 
-        $all_forms = array_unique(array_column($this->mapper, 'to_form_instance'));
+        $all_forms = array_unique(array_column($this->map, 'to_form_instance'));
         foreach($all_forms as $form) {
             $form_parts = explode(":", $form);
             $repeating_forms[] = $form_parts[0];
@@ -90,7 +90,7 @@ class Mapper
      * @param $file
      * @return array
      */
-    function createMapper($file) {
+    function createMap($file) {
         global $module;
 
         $data = array();
@@ -225,7 +225,7 @@ class Mapper
 
         $fp = fopen('php://output', 'wb');
         fputcsv($fp, $this->header);
-        foreach ($this->mapper as $row) {
+        foreach ($this->map as $row) {
             fputcsv($fp, $row);//, "\t", '"' );
         }
 
@@ -248,8 +248,8 @@ class Mapper
      * GETTER / SETTER
      */
 
-    function getMapper() {
-        return $this->mapper;
+    function getMap() {
+        return $this->map;
     }
 
     function getRepeatingForms() {

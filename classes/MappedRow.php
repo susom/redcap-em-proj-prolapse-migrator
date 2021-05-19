@@ -17,9 +17,6 @@ class MappedRow {
     private $origin_id;    //original id. ex; 77-1234-01
     private $visit_id;     // visit       ex: 01
 
-    private $legacy_main_id_field;  //keep copy of original ID
-    private $legacy_visit_id_field;  //keep copy of original visit ID for visit event
-
     private $main_data; //main event (left blank in map file
     private $event_data; //to_event field specified in map file
 
@@ -30,9 +27,12 @@ class MappedRow {
     private $mapper;
     private $transmogrifier;  // converter of fieldtypes
 
+    private $handle_repeat;  //we are dealing with a repeating form
+    private $instance_id;
+
     private $data_errors;
 
-    public function __construct($ctr, $row, $id_field, $mrn_field, $mapper, $transmogrifier) {
+    public function __construct($ctr, $row, $id_field, $mrn_field, $mapper, $transmogrifier, $handle_repeat = false, $instance_id=1) {
         global $module;
 
         $this->ctr       = $ctr;
@@ -41,11 +41,13 @@ class MappedRow {
         $this->setMRN($row[$mrn_field]);
         $this->mrn_field = $mrn_field;
 
-        $this->mapper    = $mapper;
+        $this->mapper         = $mapper;
         $this->transmogrifier = $transmogrifier;
 
-        $this->mapRow($row);
+        $this->handle_repeat  = $handle_repeat;
+        $this->instance_id    = $instance_id;
 
+        $this->mapRow($row);
 
     }
 
@@ -83,23 +85,6 @@ class MappedRow {
 
 
         return $found;
-    }
-
-    function DELETE___checkIDExistsInVisit() {
-        global $module;
-
-        $id              = $this->origin_id;
-        $target_id_field = $this->legacy_visit_id_field;
-        $target_event    = $module->getProjectSetting('visit-event-id');
-
-        if (($target_id_field == null) || ($target_event == null)) {
-            throw new Exception("ID: $target_id_field or EVENT: $target_event not set to check ID");
-        }
-
-        $found = $this->checkIDExists($id, $target_id_field, $target_event);
-
-        return $found;
-
     }
 
 
@@ -226,8 +211,7 @@ and rd.value = '%s'",
                 continue; //don't upload this descriptive
             }
 
-
-
+            //skip if there is no to_field
             if (empty($mapper[$key]['to_field'])) {
                 $msg = "This key, $key, has no to field. It will not be migrated.";
                 $error_msg[] = $msg;
@@ -295,6 +279,7 @@ and rd.value = '%s'",
             //$module->emDebug("=========> TARGET",$key,  $target_field_array);
 
             //HANDLE the EVENT FORMS
+            //using else if since should only execute one and in this order
             //if 'to_event' is populated, it will add to the event_data array
             if (!empty($mapper[$key]['to_event'])) {
                 $to_event    =  $mapper[$key]['to_event'];
@@ -357,8 +342,20 @@ and rd.value = '%s'",
                 }
 
                 //xxyjl: this is bogus, but adding the visit+id here will be set multiple times, ok?
-                $repeat_form_data[$instance_parts[0]][$instance_parts[1]][$instance_parts[0]."_visit_id"] = $this->origin_id;
+                $repeat_form_data[$instance_parts[0]][$instance_parts[1]][$instance_parts[0] . "_visit_id"] = $this->origin_id;
 
+            } else if (!empty($mapper[$key]['from_repeat_to_event'])) {
+                //if handle_repeat not set then ignore (do not map)
+                if ($this->handle_repeat) {
+                    //json object with format of "instance_number":"target_event_name"
+                    $repeat_map = json_decode($mapper[$key]['from_repeat_to_event'], true);
+                    $foo = $repeat_map[$this->instance_id];
+                    $target_event_id = REDCap::getEventIdFromUniqueEvent($repeat_map[$this->instance_id]);
+
+                    foreach ($target_field_array as $t_field => $t_val) {
+                        $event_data[$target_event_id][$t_field] = $t_val;
+                    }
+                }
             } else {
                 //this is for the main event
                 foreach ($target_field_array as $t_field => $t_val) {

@@ -49,20 +49,8 @@
       "type": "event-list"
     },
     {
-      "key": "visit-event-id",
-      "name": "<div class='alert alert-success'><b>Visit Event Name</b></div>",
-      "required": false,
-      "type": "event-list"
-    },
-    {
-      "key": "fup-event-id",
-      "name": "<div class='alert alert-success'><b>FUP Event Name</b></div>",
-      "required": false,
-      "type": "event-list"
-    },
-    {
-      "key": "op-event-id",
-      "name": "<div class='alert alert-success'><b>Operations Event Name</b></div>",
+      "key": "repeat-event-id",
+      "name": "<div class='alert alert-success'><b>Repeating Event Name (currently only handles one event)</b></div>",
       "required": false,
       "type": "event-list"
     },
@@ -73,14 +61,19 @@
       "type": "field-list"
     },
     {
+      "key": "desc",
+      "name": "<div class='alert alert-warning'>ORIGIN PROJECT configuration</b></div>",
+      "type": "descriptive"
+    },
+    {
       "key": "origin-main-id",
-      "name": "<div class='alert alert-success'><b>Origin Main Id Field</b></div>",
+      "name": "<div class='alert alert-success'><b>Origin Main Id Field: primary key of the origin project</b></div>",
       "required": false,
       "type": "text"
     },
     {
       "key": "origin-main-event",
-      "name": "<div class='alert alert-success'><b>Origin Main Event</b></div>",
+      "name": "<div class='alert alert-success'><b>Origin Main Event: main event name of the origin project</b></div>",
       "required": false,
       "type": "text"
     }

@@ -60,7 +60,7 @@ class DDMigrator
         $this->mapper = new Mapper($origin_id, $file);
 
 
-        $this->map = $this->mapper->getMapper();
+        $this->map = $this->mapper->getMap();
 
         //reorganize by mid-field
         $this->map_mid = $this->rekeyMapByMidField();
@@ -276,7 +276,7 @@ class DDMigrator
         //print "<pre>" . print_r($this->mapper->getMapper(),true). "</pre>";
 
 
-        foreach ($this->mapper->getMapper() as $key => $map) {
+        foreach ($this->mapper->getMap() as $key => $map) {
             $replacement =  $map['to_field'];
             //echo "<br> CHECKING: $key vs $replacement";
 

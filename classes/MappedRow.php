@@ -341,9 +341,6 @@ and rd.value = '%s'",
                     $repeat_form_data[$instance_parts[0]][$instance_parts[1]][$t_field] = $t_val;
                 }
 
-                //xxyjl: this is bogus, but adding the visit+id here will be set multiple times, ok?
-                $repeat_form_data[$instance_parts[0]][$instance_parts[1]][$instance_parts[0] . "_visit_id"] = $this->origin_id;
-
             } else if (!empty($mapper[$key]['from_repeat_to_event'])) {
                 //if handle_repeat not set then ignore (do not map)
                 if ($this->handle_repeat) {

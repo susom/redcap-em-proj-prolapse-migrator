@@ -332,6 +332,26 @@ class ProjProlapseMigrator extends \ExternalModules\AbstractExternalModule
             $save_event_data = array(); //reset to empty
             $save_event_data[$record_id] = $event_data;
 
+            $foo_keys = array_keys($event_data); reset($event_data);
+
+            //xxyjl specific to prolapse, add the timeframe to the fu_timeframe field for each followup event.
+            foreach(array_keys($event_data) as $k_event_id) {
+                $k_event_name = REDCap::getEventNames(true,false, $k_event_id);
+                $parts = preg_split("/_/",$k_event_name);
+
+                switch($parts[0]) {
+                    case 'followup':
+                        $save_event_data[$record_id][$k_event_id]['fup_timeframe'] = $parts[1];
+                        break;
+                    case 'visit':
+                        if ($parts[1] == "2") $code=7;
+                        if ($parts[1] == "1") $code=8;
+                        $save_event_data[$record_id][$k_event_id]['fup_timeframe'] = $code;
+                        break;
+                }
+
+            }
+
             $this->emDebug("Row $ctr EVENT: Starting Event migration w count of " . sizeof($event_data)); //, $mrow->getVisitData());
 
             $event_save_status = REDCap::saveData('array',$save_event_data);

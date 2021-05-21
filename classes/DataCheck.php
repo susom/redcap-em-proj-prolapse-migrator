@@ -7,13 +7,16 @@ namespace Stanford\ProjProlapseMigrator;
 
 class DataCheck
 {
-    private static $re_missed_school = '/(?<find>\b([0-9]|1[0-9]|20)\b)/';
 
+    //TODO: this should be exposed in config so that it can be done in fly.
     private static $checker = array(
         //June: converted to text so that Jaynelle can convert later
         //"missed_school"=>'/(?<find>\b([0-9]|1[0-9]|20)\b)$/',  //only allow numbers (since it's an integer field
-        'sympsib_v2'   => '/(?<find>\b([01]\b))/',
-        'gi_new'       => '/(?<find>^([0-9]|[1-9]\d|100)$)/'
+        //'sympsib_v2'      => '/(?<find>\b([01]\b))/',
+        //'gi_new'          => '/(?<find>^([0-9]|[1-9]\d|100)$)/',
+        'day_abscess'     => '/(?<find>\b([2|3|98|99]\b))/',
+        'day_abscess_v2'  => '/(?<find>\b([2|3|98|99]\b))/',
+        'anastomotic_leak_30_day' => '/(?<find>\b([1|1|98]\b))/',
     );
 
     public static function valueValid($field, $val) {
@@ -29,7 +32,8 @@ class DataCheck
             if ($found != '') {
                 return true;
             } else {
-                //$module->emDebug("this val is not valid:  <$val>", isset($matches[0]['find']), $matches);
+                $module->emDebug("DATA CHECKER FAIL: this value for field $field is not valid. NOT ENTERED:  <$val>");
+                //$module->emDebug(isset($matches[0]['find']), $matches);
                 return false;
             }
         }

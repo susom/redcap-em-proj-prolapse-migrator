@@ -218,9 +218,12 @@ and rd.value = '%s'",
                 continue;
             }
 
+            if ($mapper[$key]['to_field'] == 'day_abscess_v2') {
+                $foo=$val;
+            }
             //check if there are data errors to handle?
-            if (!DataCheck::valueValid($key, $val)) {
-                $module->emError("Data INVALID / DELETED : key is $key and val is $val" );
+            if (!DataCheck::valueValid($mapper[$key]['to_field'], $val)) {
+                $module->emError("Data INVALID / DELETED : key is $key and val is $val mapping to ".$mapper[$key]['to_field'] );
                 $this->data_errors[$key] = $val;
                 $val = NULL;
 

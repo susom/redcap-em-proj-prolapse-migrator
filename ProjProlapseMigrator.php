@@ -85,7 +85,7 @@ class ProjProlapseMigrator extends \ExternalModules\AbstractExternalModule
 
     }
 
-    public  function processRecords($file, $origin_pid, $first_ct = 0, $last_ct = null) {
+    public  function processRecords($file, $origin_pid, $first_ct = 1, $last_ct = null) {
 
         $origin_main_event = $this->getProjectSetting('origin-main-event');
 
@@ -104,7 +104,8 @@ class ProjProlapseMigrator extends \ExternalModules\AbstractExternalModule
         $r_data = json_decode($r_json_data, true);
 
         for ($i = $first_ct; $i <= $last_ct; $i++) {
-            $rec_id = $r_data[$i][$this->getProjectSetting('origin-main-id')];
+            //adjust the ctr by 1 since REDCap starts array at 0
+            $rec_id = $r_data[($i-1)][$this->getProjectSetting('origin-main-id')];
             $this->emDebug("adding ct: $i record_id : $rec_id");
             $record_list[] = $rec_id;
         }
@@ -119,7 +120,16 @@ class ProjProlapseMigrator extends \ExternalModules\AbstractExternalModule
         );
         $data = REDCap::getData($params);
 
-        $this->process($origin_pid, $data, $file);
+        //2. Set up the Mapper
+        //upload csv file that defines the mapping from old field to new field
+        //$this->mapper = new Mapper($this->getProjectSetting('origin-pid'), $file);
+        $this->mapper = $this->getMapper($origin_pid, $file);
+
+        //3. Set the file and origin_pid
+        $this->origin_pid = $origin_pid;
+        $this->file       = $file;
+
+        $this->process($origin_pid, $data);
     }
 
 
@@ -156,7 +166,7 @@ class ProjProlapseMigrator extends \ExternalModules\AbstractExternalModule
 
 
         //$data = REDCap::getData($origin_pid, 'array', null, null, array($origin_main_event));
-        $ctr = 0;
+        $ctr = 1;
 
         // foreach row in first event
         foreach($data as $record => $events) {
@@ -170,7 +180,7 @@ class ProjProlapseMigrator extends \ExternalModules\AbstractExternalModule
                 //if event is 'repeat_instances', then the first nest is the event,
                 if ($event == 'repeat_instances') {
                     //the ne
-                    $this->emDebug("REPEAT INSTANCES from array IN EVENT $event");
+                    $this->emDebug("HANDLING REPEAT INSTANCES for record $record from array IN EVENT $event");
                     $handle_repeat = true;
 
                     //repeat instances are arranged
@@ -188,33 +198,34 @@ class ProjProlapseMigrator extends \ExternalModules\AbstractExternalModule
                 } else {
                     $this->processEvent($ctr, $row, $record, $event);
                 }
-                $ctr++;
+
             }
+            $ctr++;
         }
 
-        if (!empty($not_entered)) {
+        if (!empty($this->not_entered)) {
             $this->emDEbug("NOT ENTERED: ".json_encode($this->not_entered));
 
             echo "<br>PROBLEM ROWS: <pre>";
             print_r($this->not_entered);
             echo "</pre>";
         }
-        if (!empty($data_invalid)) {
+        if (!empty($this->data_invalid)) {
             $this->emDebug("INVALID DATA: " . json_encode($this->data_invalid));
             echo "<br>INVALID DATA: <pre>";
             print_r($this->data_invalid);
             echo "</pre>";
         }
         //printout the error file
-        //file_put_contents("foo.csv", $not_entered);
+        //file_put_contents("foo.csv", $this->not_entered);
 
 
         //exit;
 
 
 
-        //$this->downloadCSVFile("troublerows.csv",$not_entered);
-
+        //$this->downloadCSVFile("troublerows.csv",$this->not_entered);
+        echo "<br> Completed upload!";
     }
 
     /**
@@ -231,8 +242,6 @@ class ProjProlapseMigrator extends \ExternalModules\AbstractExternalModule
      * @param $event
      */
     private function processEvent($ctr, $row, $record, $event_id, $handle_repeat = false, $instance_id=1, $form_name = null) {
-        global $not_entered;
-        global $data_invalid;
         $target_main_event = $this->getProjectSetting('main-config-event-id');
         $target_repeat_event = $this->getProjectSetting('repeat-event-id') ;
         //Repeating Event : only handles one repeat event
@@ -252,7 +261,7 @@ class ProjProlapseMigrator extends \ExternalModules\AbstractExternalModule
         try {
             $mrow = new MappedRow($ctr, $row, $origin_id_field, $mrn_field, $map, $transmogrifier,$handle_repeat, $instance_id);
             if (!empty($mrow->getDataError())) {
-                $data_invalid[$record] = $mrow->getDataError();
+                $this->data_invalid[$record] = $mrow->getDataError();
                 $this->emError($mrow->getDataError());
             }
         } catch (EMConfigurationException $ece) {
@@ -263,32 +272,38 @@ class ProjProlapseMigrator extends \ExternalModules\AbstractExternalModule
         } catch (Exception $e) {
             $msg = 'Unable to process row $ctr: ' . $e->getMessage();
             $this->emError($msg);
-            $this->logProblemRow($ctr, $row, $msg, $not_entered);
+            $this->logProblemRow($ctr, $row, $msg, $this->not_entered);
             return;
         }
 
-        try {
-            $found = $mrow->checkIDExistsInMain();
-        } catch (\Exception $e) {
-            $msg = 'Unable to process row $ctr: '. $e->getMessage();
-            $this->emError($msg);
-            $this->logProblemRow($ctr, $row, $msg, $not_entered);
-            return;
+        if (!$handle_repeat) {
+            try {
+                $found = $mrow->checkIDExistsInMain();
+            }
+            catch (\Exception $e) {
+                $msg = 'Unable to process row $ctr: ' . $e->getMessage();
+                $this->emError($msg);
+                $this->logProblemRow($ctr, $row, $msg, $this->not_entered);
+                return;
+            }
+
+            if (!empty($found)) {
+                $record_id = $found['record']; //with the new SQL version
+                $this->emDEbug("Row $ctr: Found an EXISTING record ($record_id) with count " . count($row));
+                $msg = "NOT LOADING: Found an EXISTING record ($record_id) with count " . count($row);
+                $this->emError($msg);
+                $this->logProblemRow($ctr, $row, $msg, $this->not_entered);
+                return;
+            }
+
+            $this->emDEbug("Row $ctr: EMPTY: $record NOT FOUND so proceed with migration");
+
+            $record_id = $record; //reuse old record
+            $this->emDebug("Row $ctr: Starting migration of $record to id: $record_id");
+        } else {
+            $record_id = $record; //reuse old record
+            $this->emDebug("Row $ctr: Starting REPEAT DATA migration of $record to id: $record_id for intance $instance_id");
         }
-
-        if (!empty($found) && !$handle_repeat) {
-            $record_id = $found['record']; //with the new SQL version
-            $this->emDEbug("Row $ctr: Found an EXISTING record ($record_id) with count " . count($row));
-            $msg =  "NOT LOADING: Found an EXISTING record ($record_id) with count " . count($row);
-            $this->emError($msg);
-            $this->logProblemRow($ctr, $row, $msg, $not_entered);
-            return;
-        }
-
-        $this->emDEbug("Row $ctr: EMPTY: $record NOT FOUND so proceed with migration");
-
-        $record_id = $record; //reuse old record
-        $this->emDebug("Row $ctr: Starting migration of $record to new id: $record_id");
 
         //HANDLE MAIN EVENT DATA
         $main_data = $mrow->getMainData();
@@ -322,7 +337,10 @@ class ProjProlapseMigrator extends \ExternalModules\AbstractExternalModule
                 $this->emError($msg, $return['errors']);//, $temp_instance);
                 $this->logProblemRow($ctr, $row, $msg, $this->not_entered);
             } else {
-                $this->emLog("Row $ctr: Successfully saved main event data for record " . $mrow->getOriginalID() . " with new id $record_id");
+                if ($handle_repeat) {
+                    $msg_handle_repeat = " for REPEATING INSTANCE $instance_id";
+                }
+                $this->emLog("Row $ctr: Successfully saved BASELINE data $msg_handle_repeat for record " . $mrow->getOriginalID() . " with new id $record_id");
             }
         }
 
@@ -361,13 +379,14 @@ class ProjProlapseMigrator extends \ExternalModules\AbstractExternalModule
                 $this->logProblemRow($ctr, $row, $msg, $this->not_entered);
                 return;
             } else {
-                $this->emLog("Row $ctr: Successfully saved main event data for record " . $mrow->getOriginalID() . " with new id $record_id");
+                $this->emLog("Row $ctr: Successfully saved EVENT data for record " . $mrow->getOriginalID() . " with new id $record_id");
             }
 
         }
 
 
         //CHECK if there is repeat data
+        //TODO: check this stuff
         $repeat_data = $mrow->getVisitData();
         if (null !== $repeat_data) {
             $this->emDebug("Row $ctr: Starting Repeating Event migration w count of " . sizeof($mrow->getVisitData())); //, $mrow->getVisitData());
@@ -379,7 +398,7 @@ class ProjProlapseMigrator extends \ExternalModules\AbstractExternalModule
                     if (empty($v_event_id)) {
                         $msg = "Row $ctr: EVENT ID was not found: $v_event_id from event name $v_event";
                         $this->emError($msg);
-                        $this->logProblemRow($ctr, $row, $msg, $not_entered);
+                        $this->logProblemRow($ctr, $row, $msg, $this->not_entered);
                         continue;
                     }
 
@@ -397,16 +416,12 @@ class ProjProlapseMigrator extends \ExternalModules\AbstractExternalModule
                     $this->emDebug("Row $ctr: record:" . $mrow->getOriginalID() . " REPEATING EVENT: $v_event Next instance is $v_instance in event $v_event_id and status is  $status"); //, $v_data);
                     if (($status === false) && $rf_event->last_error_message) {
                         $this->emError("Row $ctr: There was an error saving record $record_id: in event <$v_event_id>", $rf_event->last_error_message);
-                        $this->logProblemRow($ctr, $row, $rf_event->last_error_message, $not_entered);
+                        $this->logProblemRow($ctr, $row, $rf_event->last_error_message, $this->not_entered);
 
                     }
                 }
 
             }
-        } else {
-            $msg = "Row $ctr: REPEAT Event had no data to enter for " . $mrow->getOriginalID();
-            $this->emError($msg);
-            $this->logProblemRow($ctr, $row, $msg, $not_entered);
         }
 
 
@@ -430,7 +445,7 @@ class ProjProlapseMigrator extends \ExternalModules\AbstractExternalModule
                 //if ($rf_form->last_error_message) {
                 if ($rf_form === false) {
                     $this->emError("Row $ctr: There was an error: ", $rf_form->last_error_message);
-                    $this->logProblemRow($ctr, $row, $rf_form->last_error_message, $not_entered);
+                    $this->logProblemRow($ctr, $row, $rf_form->last_error_message, $this->not_entered);
                 }
             }
         }

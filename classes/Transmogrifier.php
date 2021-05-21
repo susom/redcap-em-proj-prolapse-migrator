@@ -8,8 +8,16 @@ use \REDCap;
 class Transmogrifier {
 
 
-    private $supported_custom = array("splitName", "textToCheckbox", "checkboxToCheckbox", "recodeRadio","addToField",
-        "fixDate", "checkboxToRadio", "radioToCheckbox");
+    private $supported_custom = array(
+        "splitName",       //split a single field into two fields. ex: name -> first_name + last_name
+        "textToCheckbox",     //convert freetext to coded values in checkbox
+        "checkboxToCheckbox",  //recode the values in a checkbox
+        "recodeRadio",  //recode codes in radio
+        "addToField",
+        "fixDate",
+        "checkboxToRadio",  //convert checkbox to radio codes
+        "radioToCheckbox"  //convert radio to checkbox
+    );
 
 
     // array with from_field and array as value with map
@@ -22,9 +30,9 @@ class Transmogrifier {
         global $module;
         foreach ($mapper as $k => $v) {
             if (!empty($v['custom'])) {
-                $module->emDebug("doing $k with ". $v['custom']);
+                //$module->emDebug("doing $k with ". $v['custom']);
                 if (!in_array($v['custom'],$this->supported_custom)) {
-                    $module->emDebug("doing $k with ". $v['custom'] . " : ". $v['from_field'], $v);
+                    //$module->emDebug("doing $k with ". $v['custom'] . " : ". $v['from_field'], $v);
                     throw new Exception("Aborting migration!!!  Unsupported custom type for field [$k]: ".$v['custom'] );
                 }
 

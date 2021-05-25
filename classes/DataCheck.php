@@ -16,7 +16,8 @@ class DataCheck
         //'gi_new'          => '/(?<find>^([0-9]|[1-9]\d|100)$)/',
         'day_abscess'     => '/(?<find>\b([2|3|98|99]\b))/',
         'day_abscess_v2'  => '/(?<find>\b([2|3|98|99]\b))/',
-        'anastomotic_leak_30_day' => '/(?<find>\b([1|1|98]\b))/',
+        'anastomotic_leak_30_day' => '/(?<find>\b([0|1|98]\b))/',
+        'ods_condition'           => '/(?<find>\b([0|1|2|3|4]\b))/'
     );
 
     public static function valueValid($field, $val) {

@@ -80,6 +80,7 @@ class Transmogrifier {
                         //$modifier[$k]['mapping'] = explode("+", $v['custom_2']);  //expecting '+' delimited, concat both fields and enter into target
 
                         $foo['map'] = explode("+", $v['custom_2']);  //expecting '+' delimited, concat both fields and enter into target
+                        break;
                     default:
                         $foo['map'] = json_decode($v['custom_2'], true);
                 }
@@ -106,7 +107,7 @@ class Transmogrifier {
                 }
 
 
-                //as of may 14, thre is now a second set of custom fields
+                //as of may 14, there is now a second set of custom fields
                 switch($v['custom2']){
                     case "checkboxToCheckbox":
                         $foo2['map'] = json_decode($v['custom2_2'], true);
@@ -115,6 +116,11 @@ class Transmogrifier {
                         $foo2['map'] = json_decode($v['custom2_2'], true);
                         break;
                     case "checkboxToRadio":
+                        $foo2['map'] = json_decode($v['custom2_2'], true);
+                        break;
+                    case "recodeRadio":
+                        //$modifier[$k]['fields'] = $v['custom_1']; //target field
+                        //$modifier[$k]['mapping'] = json_decode($v['custom_2'], true);
                         $foo2['map'] = json_decode($v['custom2_2'], true);
                         break;
                     default:
@@ -250,15 +256,13 @@ class Transmogrifier {
      * @return array
      */
     public function radioToCheckbox($from_field, $incoming_value, $target_field, $map) {
-        global $module;
+
         $return_array = null;
 
-        //$target_field = $this->modifier[$from_field]['fields'];
-        //$map = $this->modifier[$from_field]['mapping'];  //array with checkbox  as key and the radio value as value
-
-        //if one, assign checkbox in map to 1
-        if ($incoming_value == 1) {
-            $outgoing[$map[$incoming_value]] = $incoming_value; //this should be one, but just in case interested in overwriting 0.
+        //return array should be of format
+        //$return_array[$target_field][$target_code]=1
+        if (!empty($map[$incoming_value])) {
+            $outgoing[$map[$incoming_value]] = 1; //this should be one, but just in case interested in overwriting 0.
         }
 
         if (!empty($outgoing)) {

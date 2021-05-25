@@ -30,8 +30,9 @@ class ProjProlapseMigrator extends \ExternalModules\AbstractExternalModule
     private $not_entered;
     private $data_invalid;
 
+    //from brooke: second instance should go to followup 3
+    //
     private $repeat_redirect = array(
-
         'pelvic_floor_distress_inventory_pfdi20' => array('2'=>'followup_3_arm_1'),
         'pelvic_floor_impact_questionnaire_pfiq7' => array('2'=>'followup_3_arm_1'),
         'virtual_1'                               => array('2'=>'followup_13_arm_1')
@@ -335,7 +336,7 @@ class ProjProlapseMigrator extends \ExternalModules\AbstractExternalModule
                 $msg = "Row $ctr: Not able to save project data for record $record_id with original id: " . $mrow->getOriginalID() . implode(" / ", $return['errors']);
                 $this->emDebug("+++++++++++++++++++++++++++++++++TROUBLE");
                 $this->emError($msg, $return['errors']);//, $temp_instance);
-                $this->logProblemRow($ctr, $row, $msg, $this->not_entered);
+                $this->logProblemRow($ctr, $row, $msg . $return['errors'], $this->not_entered);
             } else {
                 if ($handle_repeat) {
                     $msg_handle_repeat = " for REPEATING INSTANCE $instance_id";

@@ -235,15 +235,20 @@ and rd.value = '%s'",
 
             //check if there are ny custom recoding needed
             if (array_key_exists($key, $modifier)) {
+
+                if ($mapper[$key]['to_field'] == 'abscess') {
+                    $foo=$val;
+                }
                 foreach ($modifier[$key] as $target_field => $def) {
                     //check if there are customizations to change that $target field
+                    //use array_replace for those cases where a single field is mapped into to fields.
                     switch($def['type']){
                         case "splitName":
                             // expecting two parameters
                             $target_field_array = $this->transmogrifier->splitName($key,$val ); //this can have two fields so expect an array
                             break;
                         case "textToCheckbox":
-                            $target_field_array = $this->transmogrifier->textToCheckbox($key, $val);
+                            $target_field_array = array_replace($this->transmogrifier->textToCheckbox($key, $val));
                             break;
                         case "checkboxToCheckbox":
                             $target_field_array = array_replace($target_field_array, $this->transmogrifier->checkboxToCheckbox($key, $val, $target_field, $def['map']));
@@ -257,7 +262,7 @@ and rd.value = '%s'",
                             $target_field_array = array_replace($target_field_array, $mod_field_array);
                             break;
                         case "recodeRadio":
-                            $target_field_array = $this->transmogrifier->recodeRadio($key, $val, $target_field, $def['map']);
+                            $target_field_array = array_replace($target_field_array,$this->transmogrifier->recodeRadio($key, $val, $target_field, $def['map']));
 
                             break;
                         case "addToField":

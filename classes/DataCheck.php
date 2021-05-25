@@ -17,7 +17,9 @@ class DataCheck
         'day_abscess'     => '/(?<find>\b([2|3|98|99]\b))/',
         'day_abscess_v2'  => '/(?<find>\b([2|3|98|99]\b))/',
         'anastomotic_leak_30_day' => '/(?<find>\b([0|1|98]\b))/',
-        'ods_condition'           => '/(?<find>\b([0|1|2|3|4]\b))/'
+        'ods_condition'           => '/(?<find>\b([0|1|2|3|4|5]\b))/',
+        'ods_pressure'           => '/(?<find>\b([0|1|2|3|4|5]\b))/',
+        'wexner_gas'           => '/(?<find>\b([0|1|2|3|4|5]\b))/',
     );
 
     public static function valueValid($field, $val) {
